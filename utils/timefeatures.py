@@ -28,6 +28,7 @@ def time_features(dates, timeenc=1, freq='h'):
     *minute returns a number from 0-3 corresponding to the 15 minute period it falls into.
     """
     if timeenc==0:
+
         dates['month'] = dates.date.apply(lambda row:row.month,1)
         dates['day'] = dates.date.apply(lambda row:row.day,1)
         dates['weekday'] = dates.date.apply(lambda row:row.weekday(),1)

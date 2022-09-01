@@ -32,7 +32,7 @@ class EncoderLayer(nn.Module):
     def __init__(self,attention, d_model, d_ff=None, dropout=0.1,activation='relu'):
         super(EncoderLayer,self).__init__()
         self.attention = attention
-        d_ff = d_ff or 4*d_model
+        d_ff = d_ff or 4 * d_model
         self.conv1 = nn.Conv1d(in_channels=d_model, out_channels = d_ff,kernel_size=1)
         self.conv2 = nn.Conv1d(in_channels=d_ff, out_channels=d_model,kernel_size=1)
         self.norm1 = nn.LayerNorm(d_model)
@@ -41,6 +41,8 @@ class EncoderLayer(nn.Module):
         self.activation = F.relu if activation == "relu" else F.gelu
     
     def forward(self, x,attn_mask=None):
+        print('EncoderLayer input.shape ' ,x.shape)
+        exit()
         _x, attn = self.attention(x,x,x,attn_mask=attn_mask)
         x = x + self.dropout(_x)
         y = x = self.norm1(x)

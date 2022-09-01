@@ -7,7 +7,7 @@ import math
 
 class PositionalEmbedding(nn.Module):
 
-    def __init__(self, d_model, max_len=5000):
+    def __init__(self, d_model, max_len=720):
         super(PositionalEmbedding, self).__init__()
         # Compute the positional encodings once in log space.
         pe = torch.zeros(max_len, d_model).float()
@@ -59,3 +59,13 @@ class DataEmbedding(nn.Module):
         x = self.value_embedding(x) + self.position_embedding(x) #+ self.temporal_embedding(x_mark)
         
         return self.dropout(x)
+
+
+class TimeFeatureEmbedding(nn.Module):
+    def __init__(self, d_inp, d_model):
+        super(TimeFeatureEmbedding,self).__init__()
+
+        self.embed = nn.Linear(d_inp, d_model)
+    
+    def forward(self, x):
+        return self.embed(x)
