@@ -48,7 +48,7 @@ class Dataset_AIR_hour(Dataset):
         with gzip.open(os.path.join(self.root_path,self.data_path),'rb') as f:
             df_raw = pickle.load(f)
 
-        df_raw = df_raw[self.set_type]
+        df_raw = df_raw[self.set_type].sort_index()
         
         # border1s = [0, 12*30*24 - self.seq_len, 12*30*24+4*30*24 - self.seq_len]
         # border2s = [12*30*24, 12*30*24+4*30*24, 12*30*24+8*30*24]
@@ -75,6 +75,7 @@ class Dataset_AIR_hour(Dataset):
 
         df_stamp['date'] = df_raw['YYYYMMDDHH']
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
+
 
         self.data_x = data
         if self.inverse:

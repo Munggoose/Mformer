@@ -15,10 +15,6 @@ class PostionEncoding(nn.Module):
 
         pos = torch.arange(0, embed_d)
         _2i = torch.arange(0,embed_d, step=2)
-        print(pos.size())
-        print(_2i.size())
-        print(pos/1000**(_2i/self.embed_d))
-        print(self.pe[:,::2].size())
         self.pe[:,::2] = torch.sin(pos/torch.pow(1000,_2i/self.embed_d))
         self.pe[:,1::2] = torch.cos(pos/torch.pow(1000,_2i/self.embed_d))
 
