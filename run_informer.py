@@ -10,7 +10,8 @@ from tqdm import tqdm
 import random
 import argparse
 from data.air_loader import Dataset_AIR_hour
-
+from lossFunction.DTWLoss import SoftDTW
+from lossFunction.fft_loss import FFTLoss
 
 #setting random seed
 # fix_seed = 2021
@@ -36,6 +37,8 @@ def getparser():
     parser = argparse.ArgumentParser(description='MunLab for Time Series Forecasting')
     parser.add_argument('--is_trainig',type=int, default = 1 , help='status')
     parser.add_argument('--epoch',type=int, default=6, help='Epochs')
+    parser.add_argument('--criterion',type=str, default='MSE',choices=['MSE','DTW','FFT'])
+
 
     #dataloader
     parser.add_argument('--batch_size',type=int, default=2, help ='batch size')
@@ -70,7 +73,7 @@ if __name__ =='__main__':
     root = 'F:\\data\\AIR'
 
     trainset = Dataset_AIR_hour(root_path=root, flag='train',size=[args.seq_len,args.pred_len,args.pred_len],
-            features='S',data_path='5Year_Training.pkl',target='CO',
+            features='S',data_path='5Year_Training.pkl',target='O3',
             scale=True, timeenc=0, freq='h', cols=None)
     
     
@@ -90,10 +93,12 @@ if __name__ =='__main__':
 
     model = model.cuda()
     wandb.watch(model)
-    criterion = nn.MSELoss()
+    criterions = {'MSE': nn.MSELoss(), 'DTW': SoftDTW(use_cuda=True, gamma=0.1), 'FFT': FFTLoss(seq_l=args.pred_len)}
+
+    criterion = criterions[args.criterion]#nn.MSELoss()
+    
+
     model_optim = optim.Adam(model.parameters(), lr = 1e-4)
-    
-    
     exp_name,result_path = make_result_folder(args)
 
 
@@ -183,11 +188,11 @@ if __name__ =='__main__':
 
         epoch_bar.set_postfix({f"{epoch+1} avgrage_loss : ": avg_loss})
         final_loss = avg_loss
-        
+
         if epoch > 3:
             pkl_path = os.path.join(result_path,f'Epoch_{epoch}.pth')
             torch.save(model,pkl_path)
 
     epoch_bar.close()
-    print(f'Munformer Result!!! 개판이누')
+    print(f'{args.model} Result!!! 개판이누')
     print(f'Final Average Loss: {final_loss:.3f}')

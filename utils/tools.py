@@ -2,8 +2,6 @@ import numpy as np
 import torch
 
 
-
-
 class StandardScaler():
     def __init__(self):
         self.mean = 0.
@@ -25,3 +23,5 @@ class StandardScaler():
             mean = mean[-1:]
             std = std[-1:]
         return (data * std) + mean
+
+

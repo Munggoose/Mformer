@@ -101,7 +101,7 @@ class TimeCustomEmbedding(nn.Module):
 
         return stamp_outs.permute(1,2,0)
 
-class TimeCustomEmbedding(nn.Module):
+class TimeCustomEmbedding2(nn.Module):
     def __init__(self, d_inp, stamp_ch=4):
         super(TimeCustomEmbedding,self).__init__()
 

@@ -349,7 +349,7 @@ class SoftDTW(torch.nn.Module):
             return out_xy - 1 / 2 * (out_xx + out_yy)
         else:
             D_xy = self.dist_func(X, Y)
-            return func_dtw(D_xy, self.gamma, self.bandwidth)
+            return func_dtw(D_xy, self.gamma, self.bandwidth).mean()
 
 # ----------------------------------------------------------------------------------------------------------------------
 def timed_run(a, b, sdtw):

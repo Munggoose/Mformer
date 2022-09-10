@@ -79,7 +79,7 @@ class Munformer(nn.Module):
 
         enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
 
-        # x_dec = self.stamp_embedding(x_dec,x_mark_dec)
+        x_dec = self.stamp_embedding(x_dec,x_mark_dec)
         dec_out = self.dec_embedding(x_dec, x_mark_dec)
 
         dec_out = self.decoder(dec_out, enc_out, x_mask=dec_self_mask, cross_mask=dec_enc_mask)
