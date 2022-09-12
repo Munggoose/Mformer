@@ -26,7 +26,7 @@ class Dataset_AIR_hour(Dataset):
             self.seq_len = size[0]
             self.label_len = size[1]
             self.pred_len = size[2]
-        
+
 
         assert flag in ['train','test','val']
         type_map = {'train':131131, 'val':131132, 'test':131132}
@@ -85,6 +85,7 @@ class Dataset_AIR_hour(Dataset):
         self.data_stamp = data_stamp
     
     def __getitem__(self, index):
+ 
         s_begin = index
         s_end = s_begin + self.seq_len
         r_begin = s_end - self.label_len 

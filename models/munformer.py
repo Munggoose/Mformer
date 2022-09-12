@@ -23,7 +23,7 @@ class Munformer(nn.Module):
         self.output_attention = output_attention
 
         #Encoding 
-        self.stamp_embedding = TimeCustomEmbedding(1,4)
+
 
         self.enc_embedding = DataEmbedding(enc_in, d_model, embed, freq, dropout)
         self.dec_embedding = DataEmbedding(dec_in, d_model, embed, freq, dropout)
@@ -73,13 +73,12 @@ class Munformer(nn.Module):
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, 
                 enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
 
-        x_enc = self.stamp_embedding(x_enc,x_mark_enc)
 
         enc_out = self.enc_embedding(x_enc, x_mark_enc)
 
         enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
 
-        x_dec = self.stamp_embedding(x_dec,x_mark_dec)
+    
         dec_out = self.dec_embedding(x_dec, x_mark_dec)
 
         dec_out = self.decoder(dec_out, enc_out, x_mask=dec_self_mask, cross_mask=dec_enc_mask)

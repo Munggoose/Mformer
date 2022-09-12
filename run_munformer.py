@@ -35,7 +35,7 @@ def getparser():
     #basic config
     parser = argparse.ArgumentParser(description='MunLab for Time Series Forecasting')
     parser.add_argument('--is_trainig',type=int, default = 1 , help='status')
-    parser.add_argument('--epoch',type=int, default=8, help='Epochs')
+    parser.add_argument('--epoch',type=int, default=40, help='Epochs')
     parser.add_argument('--criterion',type=str, default='MSE',choices=['MSE','DTW','FFT'])
 
 
@@ -69,13 +69,16 @@ if __name__ =='__main__':
     root = 'F:\\data\\ETDataset\\ETT-small'
     root = 'F:\\data\\AIR'
 
-    trainset = Dataset_AIR_hour(root_path=root, flag='train',size=[720,168,168],
+
+    trainset = Dataset_AIR_hour(root_path=root, flag='train',size=[args.seq_len,args.pred_len,args.pred_len],
             features=args.features,data_path='5Year_Training.pkl',target='CO',
             scale=True, timeenc=0, freq='h', cols=None)
 
-    testset = Dataset_AIR_hour(root_path=root, flag='test',size=[720,168,168],
+
+    testset = Dataset_AIR_hour(root_path=root, flag='test',size=[args.seq_len,args.pred_len,args.pred_len],
             features=args.features,data_path='5Year_Training.pkl',target='CO',
             scale=True, timeenc=0, freq='h', cols=None)
+
 
     # trainset = Dataset_ETT_hour(root,features=args.features)    
     trainloader = DataLoader(trainset, batch_size= args.batch_size,shuffle=True,drop_last=True)
@@ -108,6 +111,10 @@ if __name__ =='__main__':
 
     hp_epoch = args.epoch
     epoch_bar = tqdm(range(hp_epoch),desc='Epoch',leave=False)
+
+    mse_lw = 0.6#torch.tensor([0.9],dtype=args.device)
+    sub_lw = 1-mse_lw#torch.ones_like(mse_lw,dtype=args.device) - mse_lw
+
     for epoch in epoch_bar:
         total_loss = []
         dataloader_bar = tqdm(trainloader,desc='data Iterator',leave=False)
@@ -117,13 +124,14 @@ if __name__ =='__main__':
         for seq_x, seq_y, seq_x_mark, seq_y_mark in dataloader_bar:
             model_optim.zero_grad()
             seq_x = seq_x.float().to(torch.device(args.device))
-            seq_y = seq_y.float()[:,:args.pred_len,:] #.to(torch.device("cuda:0"))
+            seq_y = seq_y.float()[:,-args.pred_len:,:] #.to(torch.device("cuda:0"))
 
             seq_x_mark = seq_x_mark.float().to(torch.device(args.device))
             seq_y_mark = seq_y_mark.float().to(torch.device(args.device))
             
+
             dec_inp = torch.zeros([seq_y.shape[0], args.pred_len, seq_y.shape[-1]]).float()
-            dec_inp = torch.cat([seq_y[:,:args.pred_len,:], dec_inp], dim=1).float().to(torch.device(args.device))
+            dec_inp = torch.cat([seq_y, dec_inp], dim=1).float().to(torch.device(args.device))
 
             out,attn = model(seq_x, seq_x_mark, dec_inp, seq_y_mark)
             # pred = out
@@ -132,9 +140,7 @@ if __name__ =='__main__':
             
             true = seq_y.to(torch.device(args.device))
             # true = trainset.inverse_transform(true)
-         
-            sub_loss = sub_criterion(out.squeeze(),true.squeeze())
-            loss = criterion(out, true) 
+            loss =  mse_lw * criterion(out, true) + sub_lw * sub_criterion(out.squeeze(),true.squeeze())
 
             # loss2 = MSE_criterion(pred, true) 
             total_loss.append(loss.item())
@@ -150,7 +156,7 @@ if __name__ =='__main__':
         avg_loss = np.average(total_loss)
         val_loss = []
         val_avg_loss = None
-        if (epoch+1) % 2 == 0:
+        if (epoch+1) > 5:
             model.eval()
             
             for seq_x, seq_y, seq_x_mark, seq_y_mark in tqdm(testloader):
@@ -170,7 +176,8 @@ if __name__ =='__main__':
                 
                 true = seq_y.to(torch.device(args.device))
                 # true = testset.inverse_transform(true)
-                loss =  criterion(out, true) + sub_criterion(out.squeeze(),true.squeeze())
+                
+                loss =  mse_lw * criterion(out, true) + sub_lw * sub_criterion(out.squeeze(),true.squeeze())
                 
                 # loss2 = MSE_criterion(pred, true) 
                 val_loss.append(loss.item())

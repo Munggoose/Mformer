@@ -36,7 +36,7 @@ def getparser():
     #basic config
     parser = argparse.ArgumentParser(description='MunLab for Time Series Forecasting')
     parser.add_argument('--is_trainig',type=int, default = 1 , help='status')
-    parser.add_argument('--epoch',type=int, default=6, help='Epochs')
+    parser.add_argument('--epoch',type=int, default=10, help='Epochs')
     parser.add_argument('--criterion',type=str, default='MSE',choices=['MSE','DTW','FFT'])
 
 
@@ -51,7 +51,7 @@ def getparser():
 
     #HpyerParameter
     parser.add_argument('--seq_len', type=int, default=720, help='input sequence length')
-    parser.add_argument('--pred_len',type=int, default=168, help='forcasting length')
+    parser.add_argument('--pred_len',type=int, default=336, help='forcasting length')
     parser.add_argument('--d_model', type=int, default=512, help='length lantet vector')
     
     #device
@@ -114,20 +114,20 @@ if __name__ =='__main__':
         for seq_x, seq_y, seq_x_mark, seq_y_mark in dataloader_bar:
             model_optim.zero_grad()
             seq_x = seq_x.float().to(torch.device(args.device))
-            seq_y = seq_y.float()[:,:args.pred_len,:] #.to(torch.device("cuda:0"))
+            seq_y = seq_y.float()[:,-args.pred_len:,:] #.to(torch.device("cuda:0"))
 
             seq_x_mark = seq_x_mark.float().to(torch.device(args.device))
             seq_y_mark = seq_y_mark.float().to(torch.device(args.device))
             
             dec_inp = torch.zeros([seq_y.shape[0], args.pred_len, seq_y.shape[-1]]).float()
-            dec_inp = torch.cat([seq_y[:,:args.pred_len,:], dec_inp], dim=1).float().to(torch.device(args.device))
+            dec_inp = torch.cat([seq_y, dec_inp], dim=1).float().to(torch.device(args.device))
 
             out,attn = model(seq_x, seq_x_mark, dec_inp, seq_y_mark)
-            pred = trainset.inverse_transform(out)
+            # pred = trainset.inverse_transform(out)
             # true = seq_y #seq_y[:,192:,-1:].to(torch.device("cuda:0"))
             
             true = seq_y.to(torch.device(args.device))
-            true = trainset.inverse_transform(true)
+            # true = trainset.inverse_transform(true)
             loss = criterion(out, true)
             
             # loss2 = MSE_criterion(pred, true) 
@@ -136,53 +136,50 @@ if __name__ =='__main__':
 
             loss.backward()
             model_optim.step()
-            last_pred = pred[0,:,0]
-            last_label = true[0,:,0]
         
-
         dataloader_bar.close()
         avg_loss = np.average(total_loss)
         val_loss = []
         val_avg_loss = None
-        if (epoch+1) % 2 == 0:
+        if (epoch) > 4:
             model.eval()
             
             for seq_x, seq_y, seq_x_mark, seq_y_mark in tqdm(testloader):
                 model_optim.zero_grad()
                 seq_x = seq_x.float().to(torch.device(args.device))
-                seq_y = seq_y.float()[:,:args.pred_len,:] #.to(torch.device("cuda:0"))
+                seq_y = seq_y.float()[:,-args.pred_len:,:] #.to(torch.device("cuda:0"))
 
                 seq_x_mark = seq_x_mark.float().to(torch.device(args.device))
                 seq_y_mark = seq_y_mark.float().to(torch.device(args.device))
                 
                 dec_inp = torch.zeros([seq_y.shape[0], args.pred_len, seq_y.shape[-1]]).float()
-                dec_inp = torch.cat([seq_y[:,:args.pred_len,:], dec_inp], dim=1).float().to(torch.device(args.device))
+                dec_inp = torch.cat([seq_y, dec_inp], dim=1).float().to(torch.device(args.device))
 
                 out,attn = model(seq_x, seq_x_mark, dec_inp, seq_y_mark)
-                pred = testset.inverse_transform(out)
+                # pred = testset.inverse_transform(out)
                 # true = seq_y #seq_y[:,192:,-1:].to(torch.device("cuda:0"))
                 
                 true = seq_y.to(torch.device(args.device))
-                true = testset.inverse_transform(true)
+                # true = testset.inverse_transform(true)
                 loss = criterion(out, true)
                 
                 # loss2 = MSE_criterion(pred, true) 
                 val_loss.append(loss.item())
                 # dataloader_bar.set_postfix({" data loss" : loss})
-                last_pred = pred[0,:,0]
-                last_label = true[0,:,0]
-            
-            val_avg_loss = np.average(val_loss)
-            wandb.log({})
+                # last_pred = pred[0,:,0]
+                # last_label = true[0,:,0]
+        
+        val_avg_loss = np.average(val_loss)
+        # wandb.log({})
         
 
-        pred_line  = [[x,y] for (x,y) in zip(range(len(last_pred)),last_pred)]
-        label_line = [[x,y] for (x,y) in zip(range(len(last_label)),last_label)]
+        # pred_line  = [[x,y] for (x,y) in zip(range(len(last_pred)),last_pred)]
+        # label_line = [[x,y] for (x,y) in zip(range(len(last_label)),last_label)]
         
-        pred_data = wandb.Table(data=pred_line, columns = ["time","y"])
-        label_data = wandb.Table(data=label_line, columns = ["time","y"])
-        wandb.plot.line(pred_data,"x", "y", title=f"pred_plot")
-        wandb.plot.line(label_data,"x", "y", title=f"label_plot")
+        # pred_data = wandb.Table(data=pred_line, columns = ["time","y"])
+        # label_data = wandb.Table(data=label_line, columns = ["time","y"])
+        # wandb.plot.line(pred_data,"x", "y", title=f"pred_plot")
+        # wandb.plot.line(label_data,"x", "y", title=f"label_plot")
         wandb.log({"Train Loss": avg_loss,
                     'Validation Loss': val_avg_loss})
 
