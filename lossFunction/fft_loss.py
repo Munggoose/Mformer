@@ -46,10 +46,11 @@ class FFTLoss(_Loss):
 
     def forward(self, input: Tensor, target: Tensor,norm: str ='ortho') -> Tensor:
         if self.seq_l == None:
-            self.seq_l = input.shape()[1]
+            self.seq_l = input.shape[1]
         
-        input = fft.fft(input,self.seq_l,norm = norm)
-        target = fft.fft(input,self.seq_l,norm = norm)
+        input = fft.fftn(input.squeeze(),dim=1,norm = norm)
+        target = fft.fftn(target.squeeze(),dim=1,norm = norm)
+
         input_real = input.real
         input_imag = input.imag
         target_real = target.real

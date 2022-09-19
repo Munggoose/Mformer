@@ -4,8 +4,6 @@ import torch.nn.functional as F
 from layers.informer_layer import ConvLayer,EncoderLayer,DecoderLayer
 
 
-
-
 class Encoder(nn.Module):
     def __init__(self, attn_layers, conv_layers=None, norm_layer=None):
         super(Encoder, self).__init__()
